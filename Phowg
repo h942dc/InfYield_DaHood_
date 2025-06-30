@@ -1,3 +1,102 @@
+if game.PlaceId == 2788229376 then
+local exe_name, exe_version = identifyexecutor()
+local function home999() end
+local function home888() end
+
+if exe_name ~= "Wave Windows" then
+hookfunction(home888, home999)
+if isfunctionhooked(home888) == false then
+    game.Players.LocalPlayer:Destroy()
+    return LPH_CRASH()
+end
+end
+
+local function check_env(env)
+for _, func in env do
+    if type(func) ~= "function" then continue end
+    if isfunctionhooked(func) then
+	game.Players.LocalPlayer:Destroy()
+	return LPH_CRASH()
+    end
+end
+end
+
+check_env(getgenv())
+check_env(getrenv())
+
+local Lua_Fetch_Connections = getconnections
+local Lua_Fetch_Upvalues = getupvalues
+local Lua_Set_Upvalue = setupvalue
+local hookfunction = hookfunction
+local Game_RunService = game:GetService("RunService")
+local Game_LogService = game:GetService("LogService")
+local Game_LogService_MessageOut = Game_LogService.MessageOut
+
+local Current_Connections, Hooked_Connections = {}, {}
+local good_check, XVNP_LASTUPDATE, XVNP_UPDATEINTERVAL = 0, 0, 5
+
+function XVNP_L(CONNECTION)
+pcall(function()
+    local OPENAC_TABLE = Lua_Fetch_Upvalues(CONNECTION.Function)[9]
+    local OPENAC_FUNCTION = OPENAC_TABLE[1]
+
+    Lua_Set_Upvalue(OPENAC_FUNCTION, 14, function(...) 
+	return function(...)
+	    local args = {...}
+	    if type(args[1]) == "table" and args[1][1] then
+		pcall(function()
+		    if type(args[1][1]) == "userdata" then
+			args[1][1]:Disconnect()
+			args[1][2]:Disconnect()
+			args[1][3]:Disconnect()
+			args[1][4]:Disconnect()
+		    end
+		end)
+	    end
+	end
+    end)
+
+    Lua_Set_Upvalue(OPENAC_FUNCTION, 1, function(...) task.wait(200) end)
+    hookfunction(OPENAC_FUNCTION, function(...) return {} end)
+end)
+end
+
+local XVNP_CONNECTIONSNIFFER = Game_RunService.RenderStepped:Connect(function()
+if #Lua_Fetch_Connections(Game_LogService_MessageOut) >= 2 then
+    XVNP_CONNECTIONSNIFFER:Disconnect()
+end
+if tick() - XVNP_LASTUPDATE >= XVNP_UPDATEINTERVAL then
+    XVNP_LASTUPDATE = tick()
+    local conns = Lua_Fetch_Connections(Game_LogService_MessageOut)
+    for _, CONNECTION in conns do
+	if not table.find(Current_Connections, CONNECTION) then
+	    table.insert(Current_Connections, CONNECTION)
+	    table.insert(Hooked_Connections, CONNECTION)
+	    XVNP_L(CONNECTION)
+	end
+    end
+end
+end)
+
+Game_RunService.RenderStepped:Connect(function()
+if tick() % 1 < 0.05 then
+    local what, are = true, true
+    if not are or not what then
+	if good_check <= 0 then
+	    game.Players.LocalPlayer:Destroy()
+	    return LPH_CRASH()
+	else
+	    good_check -= 1
+	end
+    else
+	good_check += 1
+    end
+end
+end)
+
+task.wait(3)
+end
+
 if IY_LOADED and not _G.IY_DEBUG == true then
     -- error("Infinite Yield is already running!", 0)
     return
